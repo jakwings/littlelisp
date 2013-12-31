@@ -22,7 +22,7 @@
   <body>
     <div id="editor">;;; Have fun!
 
-;; Y combinator, use it to get fixed point of a function
+;; Y combinator, use it to get a fixed point of a function
 » (define (Y f) ((lambda (x) (x x)) (lambda (x) (f (lambda (y) ((x x) y))))))
 ;; Use it to test Y combinator
 » (define (f_gen f) (lambda (n) (if (&lt; n 1) 1 (* n (f (- n 1))))))
@@ -81,8 +81,8 @@
 
         var preventEditing = function (evt) {
           var range = aceEditor.getSelectionRange();
-          if (range.start.row < lastExecutionRow ||
-              range.end.row < lastExecutionRow) {
+          if (range.start.row <= lastExecutionRow ||
+              range.end.row <= lastExecutionRow) {
             if (!aceEditor.getReadOnly()) {
               aceEditor.setReadOnly(true);
             }
@@ -94,6 +94,7 @@
         };
         $editor.addEventListener('click', preventEditing, false);
         $editor.addEventListener('keydown', preventEditing, false);
+        $editor.addEventListener('keyup', preventEditing, false);
 
         aceDocument.on('change', function (info) {
           var data = info.data;
