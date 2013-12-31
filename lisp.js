@@ -1,5 +1,5 @@
 /******************************************************************************\
- * Date: 2013-12-31 10:03:05 +08:00
+ * Date: 2013-12-31 11:45:39 +08:00
  * Author: Jak Wings
  * Copyleft: All rights reversed.
  * Website:
@@ -150,7 +150,8 @@ var interpretList = function (nodes, context) {
     if (atoms[0] instanceof Function) {
       return funcall(atoms);
     } else {
-      return atoms;
+      // Array is hard to be purified in Javascript
+      atoms[0]();  // error
     }
   }
 };
@@ -209,8 +210,9 @@ var keywords = {
   /// e.g (define I (lambda (x) x)) or (define (f x y) (+ x y))
   'define': function (nodes, context) {
     if (nodes[1] instanceof Array) {
+      var token = new Token({type: 'identifier', value: 'lambda'});
       environment.set(nodes[1][0].value, this.lambda(
-          ['lambda', nodes[1].slice(1), nodes[2]], environment));
+          [token, nodes[1].slice(1), nodes[2]], environment));
     } else {
       environment.set(nodes[1].value, interpret(nodes[2], environment));
     }
