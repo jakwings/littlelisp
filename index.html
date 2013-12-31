@@ -154,15 +154,22 @@
           readOnly: true
         });
 
+        var execPrompt = function () {
+          var row = aceDocument.getLength() - 1;
+          if (aceDocument.getLine(row).length > CPI.length) {
+            aceEditor.insert('\n' + CPI);
+          }
+        };
         aceEditor.commands.addCommand({
-          name: 'Prompt',
+          name: 'Prompt1',
           bindKey: {win: 'Enter', mac: 'Enter'},
-          exec: function () {
-            var row = aceDocument.getLength() - 1;
-            if (aceDocument.getLine(row).length > CPI.length) {
-              aceEditor.insert('\n' + CPI);
-            }
-          },
+          exec: execPrompt,
+          readOnly: true
+        });
+        aceEditor.commands.addCommand({
+          name: 'Prompt2',
+          bindKey: {win: 'Shift-Enter', mac: 'Shift-Enter'},
+          exec: execPrompt,
           readOnly: true
         });
 
