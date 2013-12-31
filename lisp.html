@@ -81,8 +81,11 @@
 
         var preventEditing = function (evt) {
           var range = aceEditor.getSelectionRange();
+          var limit = CPI.length - 1;
           if (range.start.row <= lastExecutionRow ||
-              range.end.row <= lastExecutionRow) {
+              range.end.row <= lastExecutionRow ||
+              range.start.column <= limit ||
+              range.end.column <= limit) {
             if (!aceEditor.getReadOnly()) {
               aceEditor.setReadOnly(true);
             }
