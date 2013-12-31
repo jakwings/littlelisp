@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Little LISP</title>
+    <style>
+      body {
+        font-size: 16px;
+      }
+      #editor {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+      }
+    </style>
+    <script src="lisp.js"></script>
+    <script src="ace/ace.js"></script>
+  </head>
+
+  <body>
+    <div id="editor">;;; Have fun!
+
+;; Y combinator, use it to get fixed point of a function
+» (define (Y f) ((lambda (x) (x x)) (lambda (x) (f (lambda (y) ((x x) y))))))
+;; Use it to test Y combinator
+» (define (f_gen f) (lambda (n) (if (&lt; n 1) 1 (* n (f (- n 1))))))
+;; Use it to test Y combinator with currying support
+» (define (g_gen f) (lambda (n m) (if (&lt; n 1) m (f (- n 1) (* m n)))))
+
+» (let ((message1 "Ctrl-Enter/⌘-Enter:Run your code.")
+»       (message2 "Ctrl-Backspace/⌘-Backspace: Reset the interpreter.")
+»       (message3 "Ctrl-L/⌘-L: Clear the screen.")
+»       (message4 "Up/Down: Navigate command history.")
+»       (hello "Have a good day!"))
+»   (print hello))</div>
+
+    <script src="flowtype.js"></script>
+    <script>
+      (function (window) {
+        var $editor = window.document.getElementById('editor');
+        $editor.style.fontSize = '1em';
+
+        var aceEditor = ace.edit($editor);
+        var aceSession = aceEditor.getSession();
+        var aceDocument = aceSession.getDocument();
+        aceEditor.setTheme('ace/theme/ambiance');
+        aceSession.setMode('ace/mode/scheme');
+
+        var CNL = aceDocument.getNewLineCharacter();
+        var CPI = '» ';  // prompt in
+        var CPO = '« ';  // prompt out
+        var lastExecutionRow = -1;
+        var commandHistory = [];
+        var commandHistoryIndex = 0;
+        var appendLine = function (text) {
+          aceEditor.navigateFileEnd();
+          aceDocument.insertLines(aceDocument.getLength(), [text + CNL + CPI]);
+        };
+        var replaceLine = function (text) {
+          if (text) {
+            var filter = new RegExp('^\\s*(?:' + CPI + ')?\\s*$');
+            text = text.split(CNL).map(function (line) {
+              return line.replace(filter, '');
+            }).filter(function (line) {
+              return line.length > 0;
+            }).join(CNL);
+          } else {
+            text = CPI;
+          }
+          aceEditor.navigateFileEnd();
+          var row = aceDocument.getLength() - 1;
+          var range = aceEditor.getSelectionRange();
+          range.start.row = lastExecutionRow + 1;
+          range.start.column = 0;
+          range.end.row = row + 1;
+          range.end.column = 0;
+          aceDocument.replace(range, text);
+        };
+
+        var preventEditing = function (evt) {
+          var range = aceEditor.getSelectionRange();
+          if (range.start.row < lastExecutionRow ||
+              range.end.row < lastExecutionRow) {
+            if (!aceEditor.getReadOnly()) {
+              aceEditor.setReadOnly(true);
+            }
+          } else {
+            if (aceEditor.getReadOnly()) {
+              aceEditor.setReadOnly(false);
+            }
+          }
+        };
+        $editor.addEventListener('click', preventEditing, false);
+        $editor.addEventListener('keydown', preventEditing, false);
+
+        aceDocument.on('change', function (info) {
+          var data = info.data;
+          switch (data.action) {
+            case 'removeText':
+              var range = data.range;
+              var start = range.start;
+              var end = range.end;
+              var limit = CPI.length - 1;
+              if (data.text.length === 1) {
+                if (start.column <= limit || end.column <= limit) {
+                  aceEditor.insert(data.text);
+                }
+              }
+              break;
+            default: break;
+          }
+        });
+
+        aceEditor.commands.addCommand({
+          name: 'LispRun',
+          bindKey: {win: 'Ctrl-Enter', mac: 'Command-Enter'},
+          exec: function () {
+            var row = aceDocument.getLength() - 1;
+            if (lastExecutionRow >= row) {
+              lastExecutionRow = row - 1;
+            }
+            var lines = aceDocument.getLines(lastExecutionRow + 1, row);
+            var filter = new RegExp('^\\s*(?:' + CPO + '.*|' + CPI + ')\\s*');
+            var code = lines.map(function (line) {
+              return line.replace(filter, '');
+            }).join(CNL).trim();
+            if (code.length < 1) { return; }
+            var result = lisp.interpret(code);
+            if (result === undefined) {
+              result = '';
+            } else if (result.substr) {
+              result = JSON.stringify(result);
+            } else if (result instanceof Array) {
+              result = JSON.stringify(result);
+            } else if (result instanceof Function) {
+              result = '"[Function: needs ' + (result.length_ || result.length) +
+                  ' arguments]"';
+            }
+            appendLine(CPO + result);
+            lastExecutionRow = aceEditor.getCursorPosition().row - 1;
+
+            commandHistory.push(lines.join(CNL));
+            if (commandHistory.length > 100) {
+              commandHistory.shift();
+            }
+            commandHistoryIndex = commandHistory.length;
+          },
+          readOnly: true
+        });
+
+        aceEditor.commands.addCommand({
+          name: 'Prompt',
+          bindKey: {win: 'Enter', mac: 'Enter'},
+          exec: function () {
+            var row = aceDocument.getLength() - 1;
+            if (aceDocument.getLine(row).length > CPI.length) {
+              aceEditor.insert('\n' + CPI);
+            }
+          },
+          readOnly: true
+        });
+
+        aceEditor.commands.addCommand({
+          name: 'LispReset',
+          bindKey: {win: 'Ctrl-Backspace', mac: 'Command-Backspace'},
+          exec: function () {
+            lisp.reset();
+            appendLine(CPO + '"The interpreter is reset!"');
+          },
+          readOnly: true
+        });
+
+        aceEditor.commands.addCommand({
+          name: 'ClearScreen',
+          bindKey: {win: 'Ctrl-L', mac: 'Command-L'},
+          exec: function () {
+            aceDocument.setValue(CPI);
+            lastExecutionRow = -1;
+          },
+          readOnly: true
+        });
+
+        aceEditor.commands.addCommand({
+          name: 'HistoryUp',
+          bindKey: {win: 'Up', mac: 'Up'},
+          exec: function () {
+            commandHistoryIndex--;
+            if (commandHistoryIndex < 0) {
+              commandHistoryIndex = 0;
+            } else {
+              var line = commandHistory[commandHistoryIndex];
+              replaceLine(line);
+            }
+          },
+          readOnly: true
+        });
+        aceEditor.commands.addCommand({
+          name: 'HistoryDown',
+          bindKey: {win: 'Down', mac: 'Down'},
+          exec: function () {
+            commandHistoryIndex++;
+            var line = commandHistory[commandHistoryIndex];
+            replaceLine(line);
+            if (commandHistoryIndex >= commandHistory.length) {
+              commandHistoryIndex = commandHistory.length;
+            }
+          },
+          readOnly: true
+        });
+
+        aceEditor.execCommand('LispRun');
+        aceEditor.focus();
+      })(this);
+    </script>
+  </body>
+</html>
