@@ -1,5 +1,5 @@
 /******************************************************************************\
- * Date: 2013-12-30 20:31:21 +08:00
+ * Date: 2013-12-31 10:03:05 +08:00
  * Author: Jak Wings
  * Copyleft: All rights reversed.
  * Website:
@@ -246,7 +246,7 @@ var environment_ = new Context({
   '*': function (a, b) { return a * b; },
   '/': function (a, b) { return a / b; },
   '%': function (a, b) { return a % b; },
-  '^': function (a, b) { return a ^ b; },
+  '^': function (a, b) { return Math.pow(a, b); },
   'print': function (x) {
     console.log(x);
     return x;
