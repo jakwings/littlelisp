@@ -70,7 +70,7 @@
 
 ;; controller
 
-;(define 'if (lambda (e) (lambda (t) (lambda (f) ((e t) f)))))
+;(define if (lambda (e) (lambda (t) (lambda (f) ((e t) f)))))
 ;(define (if e t f) (e t f))
 ;(define 'if (lambda (test)
 ;              (lambda (onTrue)
