@@ -20,14 +20,70 @@
   </head>
 
   <body>
-    <div id="editor">;;; Have fun!
+    <div id="editor">;;; Loading Church encoding library...
 
-;; Y combinator, use it to get a fixed point of a function
-» (define (Y f) ((lambda (x) (x x)) (lambda (x) (f (lambda (y) ((x x) y))))))
+;; void value for CBV evaluaiton strategy to prevent non-termination
+(define void (lambda (x) x))
+(define (const x) (lambda (_) x))
+;;; Currying
+(define curry (lambda (f) (lambda (x) (lambda (y) (f x y)))))
+(define uncurry (lambda (f) (lambda (x y) ((f x) y))))
+;;; Conditionals
+(define 'T (lambda (onTrue onFalse)
+             (onTrue void)))
+(define 'F (lambda (onTrue onFalse)
+             (onFalse void)))
+(define ('and x y)
+  (x (const y) (const 'F)))
+(define ('or x y)
+  (x (const 'T) (const y)))
+(define ('not x)
+  (x (const 'F) (const 'T)))
+(define ('xor x y)
+  ('or ('and ('not x) y) ('and x ('not y))))
+(define ('if test onTrue onFalse)
+  (test (const onTrue) (const onFalse)))
+(define (bool test)
+  (if test 'T 'F))
+(define (boolify test)
+  ((test (const 1)) (const 0)))
+;;; Numerical
+(define zero (lambda (f z) z))
+(define (suc n)
+  (lambda (y x) (y (n y x))))
+(define (add x y)
+  (x suc y))
+(define (mul w y)
+  (lambda (x) (w (y x))))
+(define (suc_pair p)
+  (lambda (z)
+    (z (suc (p (lambda (t f) t))) (p (lambda (t f) t)))))
+(define (pre n)
+  ((n suc_pair (lambda (z) (z zero zero))) (lambda (t f) f)))
+(define (sub x y) (y pre x))
+(define zerop (lambda (x)
+                ((x (lambda (x) (F (const x) void)) not) F)))
+(define (ge x y) (zerop (sub y x)))
+(define (gt x y) (not (ge y x)))
+(define (le x y) (zerop (sub x y)))
+(define (lt x y) (not (le y x)))
+(define (eq x y) (and (ge x y) (ge y x)))
+(define (ne x y) (not (eq x y)))
+(define (number n)
+  ((Y (lambda (g k)
+        (if (&lt; k 1) zero (suc (g (- k 1)))))) n))
+(define (numerify n)
+  ((n (lambda (x) (+ 1 x))) 0))
+;;; Recursion
+(define (Y g)
+  ((lambda (x) (g (lambda (y) ((x x) y))))
+    (lambda (x) (g (lambda (y) ((x x) y))))))
 ;; Use it to test Y combinator
-» (define (f_gen f) (lambda (n) (if (&lt; n 1) 1 (* n (f (- n 1))))))
+(define (f_gen f) (lambda (n) (if (&lt; n 1) 1 (* n (f (- n 1))))))
 ;; Use it to test Y combinator with currying support
-» (define (g_gen f) (lambda (n m) (if (&lt; n 1) m (f (- n 1) (* m n)))))
+(define (g_gen f) (lambda (n m) (if (&lt; n 1) m (f (- n 1) (* m n)))))
+
+(print "Church encoding library loaded. Have fun!")
 
 » (let ((message1 "Ctrl-Enter/⌘-Enter:Run your code.")
 »       (message2 "Ctrl-Backspace/⌘-Backspace: Reset the interpreter.")
