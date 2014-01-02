@@ -119,30 +119,32 @@
   ((n suc_pair (lambda (z) (z zero zero))) (lambda (t f) f)))
 
 ;(define sub (lambda (x) (lambda (y) ((y pre) x))))
-;(define sub (lambda (x y) (y pre x)))
 (define (sub x y) (y pre x))
 
-;(define zerop (lambda (x) (x F not F)))
+;(define zerop (lambda (x) (((x F) not) F)))
+;(define zerop (lambda (x) ((x F not) F)))
+;(define zerop (lambda (x)
+;                (((x (lambda (x) (('F (const x)) void))) 'not) 'F)))
 (define zerop (lambda (x)
-                ((x (lambda (x) (F (const x) void)) not) F)))
+                ((x (lambda (x) ('F (const x) void)) 'not) 'F)))
 
 ;(define ge (lambda (x) (lambda (y) (zerop ((sub y) x)))))
 (define (ge x y) (zerop (sub y x)))
 
-;(define gt (lambda (x) (lambda (y) (not ((ge y x))))))
-(define (gt x y) (not (ge y x)))
+;(define gt (lambda (x) (lambda (y) ('not ((ge y x))))))
+(define (gt x y) ('not (ge y x)))
 
 ;(define le (lambda (x) (lambda (y) (zerop ((sub x) y)))))
 (define (le x y) (zerop (sub x y)))
 
-;(define lt (lambda (x) (lambda (y) (not ((le y) x)))))
-(define (lt x y) (not (le y x)))
+;(define lt (lambda (x) (lambda (y) ('not ((le y) x)))))
+(define (lt x y) ('not (le y x)))
 
-;(define eq (lambda (x) (lambda (y) ((and ((ge x) y)) ((ge y) x)))))
-(define (eq x y) (and (ge x y) (ge y x)))
+;(define eq (lambda (x) (lambda (y) (('and ((ge x) y)) ((ge y) x)))))
+(define (eq x y) ('and (ge x y) (ge y x)))
 
-;(define ne (lambda (x) (lambda (y) (not ((eq x) y)))))
-(define (ne x y) (not (eq x y)))
+;(define ne (lambda (x) (lambda (y) ('not ((eq x) y)))))
+(define (ne x y) ('not (eq x y)))
 
 ;; Church encoding & decoding
 
