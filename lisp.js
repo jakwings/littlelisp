@@ -276,7 +276,6 @@ var run = function (input) {
   var inlineCommentOn = false;
   var i = 0, s = '';;
   for (var c; typeof (c = input[i]) !== 'undefined'; i++) {
-    s += c;
     if (inlineCommentOn) {
       if (c !== '\r' && c !== '\n') {
         continue;
@@ -284,6 +283,7 @@ var run = function (input) {
         inlineCommentOn = false;
       }
     }
+    s += c;
     switch (c) {
       case '"':
         stringOn = !stringOn;
